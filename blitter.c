@@ -255,7 +255,7 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam)
 		bmi.bmiHeader.biPlanes=1;
 		bmi.bmiHeader.biSize=40;
 		if(stretch)
-			StretchDIBits(hdc,0,32,client_rect.right-20,client_rect.bottom,0,0,BUF_WIDTH,BUF_HEIGHT,buffer,&bmi,DIB_RGB_COLORS,SRCCOPY);
+			StretchDIBits(hdc,0,0,client_rect.right,client_rect.bottom,0,0,BUF_WIDTH,BUF_HEIGHT,buffer,&bmi,DIB_RGB_COLORS,SRCCOPY);
 		else
 			SetDIBitsToDevice(hdc,0,0,BUF_WIDTH,BUF_HEIGHT,0,0,0,BUF_WIDTH,buffer,&bmi,DIB_RGB_COLORS);
 		EndPaint(hwnd,&ps);
@@ -385,6 +385,9 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam)
 			debug_printf("return =%i\r\n",i);
 			break;*/
 		case VK_F5:
+			break;
+		case VK_F9:
+			stretch=!stretch;
 			break;
 		case 0xDEADBEEF:
 			break;
