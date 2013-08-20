@@ -27,10 +27,15 @@ int compute_shift()
 {
 	static int i=0;
 	shift2=shift1;
+#ifdef _DEBUG
+//	shift2=shift1=0;
+//	return;
+#endif
 	if(shift_rand){
 		static sign=-1;
-		shift1=i*sign;//rand()%BSIZE;
+		shift1=8*sign;
 		sign=-sign;
+		//shift1=rand()%BSIZE;
 	}
 	else
 		shift1=valueshift[i];
@@ -89,17 +94,29 @@ int blit(char *src,char *dst,int sx,int sy,int dx,int dy,
 	if(FALSE)
 #endif
 	{
+		int show_src=FALSE;
+		int show_dst=FALSE;
+		show_src=TRUE;
+		show_dst=TRUE;
 		for(x=0;x<w;x++){
-//				set_pix(screen_out,sx+x,sy,0xFF0000);
-//				set_pix(screen_out,sx+x,sy+h,0xFF0000);
-				set_pix(screen_out,dx+x,dy,0xFF00);
-				set_pix(screen_out,dx+x,dy+h,0xFF00);
+			if(show_src){
+				set_pix(screen_out,sx+x,sy,0xFF0000);
+				set_pix(screen_out,sx+x,sy+h,0xFF0000);
+			}
+			if(show_dst){
+				set_pix(screen_out,dx+x,dy,0x7F70);
+				set_pix(screen_out,dx+x,dy+h,0x7F70);
+			}
 		}
 		for(y=0;y<h;y++){
-//				set_pix(screen_out,sx,sy+y,0xFF0000);
-//				set_pix(screen_out,sx+w,sy+y,0xFF0000);
-				set_pix(screen_out,dx,dy+y,0xFF00);
-				set_pix(screen_out,dx+w,dy+y,0xFF00);
+			if(show_src){
+				set_pix(screen_out,sx,sy+y,0xFF0000);
+				set_pix(screen_out,sx+w,sy+y,0xFF0000);
+			}
+			if(show_dst){
+				set_pix(screen_out,dx,dy+y,0x7F70);
+				set_pix(screen_out,dx+w,dy+y,0x7F70);
+			}
 		}
 		return 0;
 	}
@@ -418,10 +435,10 @@ int tornado(char *buf,int init)
 	}
 
 	compute_shift();
+	k=shift2-shift1;
 	for(y=0;y<HEIGHT;y+=BSIZE){
 		i=0;
 		for(x=0;x<WIDTH;x+=BSIZE){
-			k=shift2-shift1;
 			blit(src,dst,
 				//x+direction[0]*(x/BSIZE-6)-direction[1]*(y/BSIZE-7)+k,y+direction[2]*(x/BSIZE-6)+direction[3]*(y/BSIZE-6)+k,
 				//x+direction[0]*(x/BSIZE-centery)-direction[1]*(y/BSIZE-centery)+k,
