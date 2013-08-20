@@ -514,7 +514,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,PSTR szCmdLine,in
 	MSG msg;
 	ghInstance=hInstance;
 #ifdef _DEBUG
-//	open_console();
+	open_console();
 #endif
 	buffer=malloc(BUF_SIZE);
 	if(buffer==0){

@@ -9,6 +9,7 @@
 #define HEIGHT (480+BSIZE)
 BYTE screen1[WIDTH*HEIGHT*BPP];
 BYTE screen2[WIDTH*HEIGHT*BPP];
+BYTE screen_out[WIDTH*HEIGHT*BPP];
 
 char shift1=0,shift2=0;
 
@@ -26,8 +27,11 @@ int compute_shift()
 {
 	static int i=0;
 	shift2=shift1;
-	if(shift_rand)
-		shift1=rand()%BSIZE;
+	if(shift_rand){
+		static sign=-1;
+		shift1=i*sign;//rand()%BSIZE;
+		sign=-sign;
+	}
 	else
 		shift1=valueshift[i];
 	i++;
@@ -76,26 +80,28 @@ int blit(char *src,char *dst,int sx,int sy,int dx,int dy,
 {
 	int x,y;
 
-	if(FALSE)
-	{
-		for(x=0;x<w;x++){
-				set_pix(dst,sx+x,sy,0xFF0000);
-				set_pix(dst,sx+x,sy+h,0xFF0000);
-				set_pix(dst,dx+x,dy,0xFF00);
-				set_pix(dst,dx+x,dy+h,0xFF00);
-		}
-		for(y=0;y<h;y++){
-				set_pix(dst,sx,sy+y,0xFF0000);
-				set_pix(dst,sx+w,sy+y,0xFF0000);
-				set_pix(dst,dx,dy+y,0xFF00);
-				set_pix(dst,dx+w,dy+y,0xFF00);
-		}
-		return 0;
-	}
 	for(x=0;x<w;x++){
 		for(y=0;y<h;y++){
 			move_pixel(src,dst,sx+x,sy+y,dx+x,dy+y);
 		}
+	}
+#ifndef _DEBUG
+	if(FALSE)
+#endif
+	{
+		for(x=0;x<w;x++){
+//				set_pix(screen_out,sx+x,sy,0xFF0000);
+//				set_pix(screen_out,sx+x,sy+h,0xFF0000);
+				set_pix(screen_out,dx+x,dy,0xFF00);
+				set_pix(screen_out,dx+x,dy+h,0xFF00);
+		}
+		for(y=0;y<h;y++){
+//				set_pix(screen_out,sx,sy+y,0xFF0000);
+//				set_pix(screen_out,sx+w,sy+y,0xFF0000);
+				set_pix(screen_out,dx,dy+y,0xFF00);
+				set_pix(screen_out,dx+w,dy+y,0xFF00);
+		}
+		return 0;
 	}
 	return 0;
 }
@@ -398,6 +404,10 @@ int tornado(char *buf,int init)
 	
 	swap_buffer(&src,&dst);
 
+#ifdef _DEBUG
+	memset(screen_out,0,sizeof(screen1));
+#endif
+
 	if(init){
 		shift2=shift1=0;
 		k=0;
@@ -412,7 +422,6 @@ int tornado(char *buf,int init)
 		i=0;
 		for(x=0;x<WIDTH;x+=BSIZE){
 			k=shift2-shift1;
-			//k=5;
 			blit(src,dst,
 				//x+direction[0]*(x/BSIZE-6)-direction[1]*(y/BSIZE-7)+k,y+direction[2]*(x/BSIZE-6)+direction[3]*(y/BSIZE-6)+k,
 				//x+direction[0]*(x/BSIZE-centery)-direction[1]*(y/BSIZE-centery)+k,
@@ -421,6 +430,7 @@ int tornado(char *buf,int init)
 				x,y,BSIZE,BSIZE);
 		}
 	}
+	printf("%i ",k);
 	k=shift1;
 	i=31;
 	copy_to_main(dst,buf,k,k);
@@ -451,8 +461,16 @@ int copy_to_main(char *src,char *dst,int x,int y)
 	else if(h<0)
 		h=0;
 
-	for(i=0;i<h;i++)
+	for(i=0;i<h;i++){
+		int j;
 		memcpy(dst+i*640*3,src+i*WIDTH*BPP+x*BPP+y*WIDTH*BPP,w*BPP);
+#ifdef _DEBUG
+		for(j=0;j<w*BPP;j++){
+			if(screen_out[j+i*WIDTH*BPP+x*BPP+y*WIDTH*BPP]!=0)
+				dst[i*640*3+j]=screen_out[j+i*WIDTH*BPP+x*BPP+y*WIDTH*BPP];
+		}
+#endif
+	}
 	return 0;
 }
 int save_image(char *buf)
