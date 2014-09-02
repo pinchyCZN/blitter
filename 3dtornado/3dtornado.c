@@ -39,6 +39,17 @@ void debug_printf(char *fmt,...)
 	_vsnprintf(s,sizeof(s),fmt,ap);
 	OutputDebugString(s);
 }
+int move_console(int x,int y,int w,int h)
+{
+	char title[MAX_PATH]={0}; 
+	HWND hcon; 
+	GetConsoleTitle(title,sizeof(title));
+	if(title[0]!=0){
+		hcon=FindWindow(NULL,title);
+		SetWindowPos(hcon,0,x,y,w,h,SWP_NOZORDER);
+	}
+	return 0;
+}
 void open_console()
 {
 	BYTE Title[200]; 
@@ -76,7 +87,15 @@ void open_console()
 	SetForegroundWindow(hConWnd);
 	consolecreated=TRUE;
 }
-
+int adjust_windows(HWND hwnd)
+{
+	RECT rect={0},desk={0};
+	GetWindowRect(hwnd,&rect);
+	GetClientRect(GetDesktopWindow(),&desk);
+	move_console(rect.left,rect.bottom,rect.right-rect.left+20,desk.bottom-(rect.bottom-rect.top)-GetSystemMetrics(SM_CYCAPTION)*2);
+	SetFocus(hwnd);
+	
+}
 
 
 
@@ -120,6 +139,10 @@ int set_pixel(BYTE *buf,int x,int y,BYTE R,BYTE G,BYTE B)
 	if(x>=BUF_WIDTH)
 		return 0;
 	if(y>=BUF_HEIGHT)
+		return 0;
+	if(x<0)
+		return 0;
+	if(y<0)
 		return 0;
 	offset=x*3+BUF_SIZE-BUF_WIDTH*3-y*BUF_WIDTH*3;
 offset=x*3+y*BUF_WIDTH*3;
@@ -328,11 +351,9 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 		case 0xBD:
 		case 0xBB:
 			break;
-		case 'O':
-			set_offsetx(1);
+		case 'Q':
 			break;
-		case 'P':
-			set_offsetx(-1);
+		case 'W':
 			break;
 		case 'K':
 			set_offsety(1);
@@ -354,6 +375,7 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			break;
 		case 0xC0:
 			change_direction(0);
+			rx=ry=rz=0;
 			break;
 		case '0':
 		case '1':
@@ -536,7 +558,9 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,PSTR szCmdLine,in
 
 	ShowWindow(hWindow,iCmdShow);
 	UpdateWindow(hWindow);
-
+#ifdef _DEBUG
+	adjust_windows(hWindow);
+#endif
 	memset(buffer,0,BUF_SIZE);
 
 	while(GetMessage(&msg,NULL,0,0))

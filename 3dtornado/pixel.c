@@ -133,109 +133,26 @@ int change_mode()
 	int_mode=!int_mode;
 	return int_mode;
 }
+static int zpos=0;
+int add_z_pos(int z)
+{
+	zpos+=z;
+	printf("zpos=%i\n",zpos);
+}
+
 int change_direction(int i)
 {
-	extern void * hWindow;
-	float adder;
-	if(int_mode)
-		adder=1;
-	else
-		adder=.1;
 	switch(i){
-	default:
-	case 100:
-		direction[0]=-direction[0];
-		direction[1]=-direction[1];
-		direction[2]=-direction[2];
-		direction[3]=-direction[3];
-		break;
 	case 0:
-		direction[0]=0;
-		direction[1]=0;
-		direction[2]=0;
-		direction[3]=0;
-		break;
-	case 6:
-		direction[0]++;
-		break;
-	case 7:
-		direction[1]++;
-		break;
-	case 8:
-		direction[2]++;
-		break;
-	case 9:
-		direction[3]++;
+		add_z_pos(-zpos);
 		break;
 	case 1:
-		direction[0]+=adder;
-		//direction[1]+=1;
-		//direction[2]+=1;
-		direction[3]+=adder;
+		add_z_pos(1);
 		break;
 	case 2:
-		direction[0]-=adder;
-		//direction[1]-=1;
-		//direction[2]-=1;
-		direction[3]-=adder;
+		add_z_pos(-1);
 		break;
-	case 3:
-		//direction[0]=0;
-		direction[1]+=adder;
-		direction[2]+=adder;
-		//direction[3]=0;
-		break;
-	case 4:
-		//direction[0]=0;
-		direction[1]-=adder;
-		direction[2]-=adder;
-		//direction[3]=0;
-		break;
-	case 11:
-		direction[0]+=.1;
-		//direction[1]+=1;
-		//direction[2]+=1;
-		direction[3]+=.1;
-		break;
-	case 12:
-		direction[0]-=.1;
-		//direction[1]-=1;
-		//direction[2]-=1;
-		direction[3]-=.1;
-		break;
-	case 13:
-		//direction[0]=0;
-		direction[1]+=.1;
-		direction[2]+=.1;
-		//direction[3]=0;
-		break;
-	case 14:
-		//direction[0]=0;
-		direction[1]-=.1;
-		direction[2]-=.1;
-		//direction[3]=0;
-		break;
-	case 5:
-		if(direction[0]<0)
-			direction[0]+=adder;
-		else if(direction[0]>0)
-			direction[0]-=adder;
-		if(direction[1]<0)
-			direction[1]+=adder;
-		else if(direction[1]>0)
-			direction[1]-=adder;
-		if(direction[2]<0)
-			direction[2]+=adder;
-		else if(direction[2]>0)
-			direction[2]-=adder;
-		if(direction[3]<0)
-			direction[3]+=adder;
-		else if(direction[3]>0)
-			direction[3]-=adder;
-		break;
-
 	}
-	update_title(hWindow,shift_rand);
 	return 0;
 }
 int centerx=8; //WIDTH/(BSIZE*3); //WIDTH/2;
@@ -506,6 +423,7 @@ int save_image(char *buf)
 		fclose(f);
 	}
 }
+
 int rotate_3d(float *x,float *y,float *z,float *rx,float *ry,float *rz)
 {
 	float cx,cy,cz,sx,sy,sz;
@@ -525,6 +443,7 @@ int rotate_3d(float *x,float *y,float *z,float *rx,float *ry,float *rz)
 	return TRUE;
 }
 
+
 int do_3d(char *buffer,float *rx,float *ry,float *rz)
 {
 
@@ -534,9 +453,9 @@ int do_3d(char *buffer,float *rx,float *ry,float *rz)
 			for(k=0;k<20;k++)
 			{
 				float x,y,z;
-				x=i;
-				y=j;
-				z=k;
+				x=i*10;
+				y=j*10;
+				z=k*10+zpos;
 				rotate_3d(&x,&y,&z,rx,ry,rz);
 				set_3dpixel(buffer,&x,&y,&z,0x55,0x55,0x55);
 			}
