@@ -462,3 +462,107 @@ int do_3d(char *buffer,float *rx,float *ry,float *rz)
 		}
 	}
 }
+
+int tube()
+{
+	static char PIXBUF[320*240*4];
+	int i[3]={100,99,8};
+	static int TEXUV[320*240*4];
+	static char screenbuf[320*240*4];
+	char *buffer;
+	buffer=get_buffer();
+#define EYE -2
+#define SCREEN 160
+	__asm{
+
+
+MAIN:
+	lea	edi,PIXBUF
+	fadd	dword ptr[edi]
+	push	edi
+
+
+	mov	edx,-80
+TUBEY:	mov	ebp,-160
+TUBEX:	lea	esi,TEXUV
+	fild	word ptr[esi][EYE]
+
+
+	mov	[esi],ebp
+	fild	[esi]
+	mov	[esi],edx
+	fild	[esi]
+
+	mov	ecx,2
+ROTATE:	
+	fld	st(3)
+	fsincos
+	fld	st(2)
+	fmul	st(0),st(1)
+	fld	st(4)
+
+	fmul	st(0),st(3)
+	fsubp	st(1),st(0)
+	fxch	st(3)
+	fmulp	st(2),st(0)
+	fmulp	st(3),st(0)
+	faddp	st(2),st(0)
+	fxch	st(2)
+	loop	ROTATE
+
+	fld	st(1)
+	fmul	st(0),st(0)
+	fld	st(1)
+	fmul	st(0),st(0)
+	faddp	st(1),st(0)
+	fsqrt
+	fdivp	st(3),st(0)
+	fpatan
+	fimul	word ptr[esi-4]
+	fistp	word ptr[esi]
+	fimul	word ptr[esi-4]
+	fistp	word ptr[esi+1]
+	mov	esi,[esi]
+
+	lea	eax,[ebx+esi]
+	add	al,ah
+	and	al,64
+	mov	al,-5
+	jz	STORE
+
+	shl	esi,2
+	lea	eax,[ebx+esi]
+	sub	al,ah
+	mov	al,-16
+	jns	STORE
+
+	shl	esi,1
+	mov	al,-48
+STORE:	add	al,[ebx+esi]
+	add	[edi],al
+	inc	edi
+
+	inc	ebp
+	cmp	ebp,160
+
+	jnz	TUBEX
+
+	inc	edx
+	cmp	edx,80
+	jnz	TUBEY
+
+	lea esi,screenbuf
+	mov	edi,(100-SCREEN/2)*320
+	mov	ecx,(SCREEN/2)*320/256
+	rep	movsw
+
+	mov	ecx,SCREEN*320/256
+BLUR:	dec	esi
+	sar	byte ptr[esi],2
+	loop	BLUR
+
+
+EXIT:
+	};
+
+}

@@ -379,6 +379,8 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			break;
 		case '0':
 		case '1':
+			tube();
+			break;
 		case '2':
 		case '3':
 		case '4':
