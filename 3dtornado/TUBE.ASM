@@ -55,8 +55,6 @@ TEX	mov	bx,cx
 
 	fninit
 	fldz
-	nop
-	nop
 
 MAIN	add	bh,8
 	mov	di,0
@@ -129,9 +127,11 @@ STORE	add	al,[fs:bx+si]
 	inc	bp
 	cmp	bp,160
 
-
 EYE	equ	$-2
-@skip
+	nop
+	nop
+	nop
+
 	jnz	TUBEX
 
 	inc	dx
@@ -164,4 +164,5 @@ BLUR	dec	si
 	;db	41,0,0C3h,3Ch
 	db	42,0,0C3h,3dh
 	
-TEXUV	db	"baze"
+TEXUV	
+	db	"baze"
