@@ -469,23 +469,103 @@ int tube()
 	int i[3]={100,99,8};
 	static int TEXUV[320*240*4];
 	static char screenbuf[320*240*4];
+	static char pal[320*240*4];
+	static char texture[0x10000*2];
+	int pindex=0;
 	char *buffer;
 	buffer=get_buffer();
 #define EYE -2
 #define SCREEN 160
+
+	sprintf(TEXUV,"baze");
+
 	__asm{
 
 
+	xor	ecx,ecx
+PAL1:	mov	edx,3C8h
+	mov	ax,cx
+	lea edi,pal
+	push eax
+	and ax,0xFF
+	mov bl,3
+	mul bl
+	xor ebx,ebx
+	mov	bx,ax
+	add edi,ebx
+	pop eax
+//	out	dx,al
+	inc	edx
+	sar	al,1
+	js	PAL2
+//	out	dx,al
+	mov [edi],al
+	inc edi
+	mul	al
+	shr	ax,6
+//	out	dx,al
+	mov [edi],al
+	inc edi
+
+PAL2:	mov	al,0
+//	out	dx,al
+	mov [edi],al
+	inc edi
+
+	jns	PAL3
+	sub	al,cl
+	shr	al,1
+//	out	dx,al
+	mov [edi],al
+	inc edi
+
+	shr	al,1
+//	out	dx,al
+	mov [edi],al
+	inc edi
+
+PAL3:	mov	ebx,ecx
+//	mov	[fs:bx],bl
+	dec cx
+	jnz PAL1
+
+	lea esi,texture
+TEX:	mov	bx,cx
+	add	ax,cx
+	rol	ax,cl
+	mov	dh,al
+	sar	dh,5
+	adc	dl,dh
+
+	and ebx,0xFFFF
+	adc dl,[esi+ebx+255]
+//	adc	dl,[fs:bx+255]
+	shr	dl,1
+//	mov	[fs:bx],dl
+	and ebx,0xFFFF;
+	mov [esi+ebx],dl
+	not	bh
+	and ebx,0xFFFF
+	mov [esi+ebx],dl
+//	mov	[fs:bx],dl
+	dec cx
+	jnz TEX
+
+	fninit
+	fldz
+
 MAIN:
-	lea	edi,PIXBUF
+	lea	edi,TEXUV-4
 	fadd	dword ptr[edi]
+	lea	edi,PIXBUF
 	push	edi
 
 
 	mov	edx,-80
 TUBEY:	mov	ebp,-160
-TUBEX:	lea	esi,TEXUV
-	fild	word ptr[esi][EYE]
+TUBEX:	
+	lea	esi,TEXUV
+	fild	word ptr[esi+EYE]
 
 
 	mov	[esi],ebp
@@ -551,8 +631,9 @@ STORE:	add	al,[ebx+esi]
 	cmp	edx,80
 	jnz	TUBEY
 
-	lea esi,screenbuf
-	mov	edi,(100-SCREEN/2)*320
+	lea esi,TEXUV
+	lea edi,screenbuf
+	add	edi,(100-SCREEN/2)*320
 	mov	ecx,(SCREEN/2)*320/256
 	rep	movsw
 
