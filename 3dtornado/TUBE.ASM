@@ -8,13 +8,15 @@
 SCREEN	equ	160
 PIXBUF	equ	204h
 
+
+
 	mov	al,13h
 	int	10h
 
 	push	word 0A000h
 	pop	es
 	mov	ax,cs
-	add	ah,10h
+	add	ah,20h
 	mov	fs,ax
 
 	xor	cx,cx
@@ -46,7 +48,7 @@ TEX	mov	bx,cx
 	mov	dh,al
 	sar	dh,5
 	adc	dl,dh
-	adc	dl,[fs:bx+255]
+	adc	dl,[fs:bx+255] ;255]
 	shr	dl,1
 	mov	[fs:bx],dl
 	not	bh
@@ -58,7 +60,7 @@ TEX	mov	bx,cx
 
 MAIN	add	bh,8
 	mov	di,0
-	fadd	dword [byte di+0-4]
+	fadd	dword [byte di+0]  ;-4]
 	mov	di,PIXBUF
 	push	di
 
@@ -66,11 +68,12 @@ MAIN	add	bh,8
 TUBEY	mov	bp,-160
 TUBEX	
 	;lea	si,[TEXUV]
-	mov si,TEXUV
-	fild	word [byte si-TEXUV+EYE]
-	nop
+	mov si,_EYE-2
+	;lea si,[_EYE-2]
+	;fild	word [byte si-TEXUV+EYE]
+	fild	word [si]
 
-	mov	si,TEXUV
+	mov si,TEXUV
 
 	mov	[si],bp
 	fild	word [si]
@@ -79,18 +82,19 @@ TUBEX
 
 	mov	cl,2
 ROTATE	fld	st3
-	fsincos
-	fld	st2
-	fmul	st0,st1
-	fld	st4
-	fmul	st0,st3
-	fsubp	st1,st0
-	fxch	st0,st3
-	fmulp	st2,st0
+	fsincos  ;cos=st0 sin=st1
+	fld	st2  ;cos=st1 sin=st2
+	fmul	st0,st1 ;p*cos
+	fld	st4  ;cos=st2 sin=st3 (p*cos=st1)
+	fmul	st0,st3 ;p*sin
+	fsubp	st1,st0 ;p*cos-p*sin=st0 cos=st3 sin=st4
+	fxch	st0,st3 ;sin=st0 p*cos-p*sin=st3
+	fmulp	st2,st0 ;p*sin
 	fmulp	st3,st0
 	faddp	st2,st0
 	fxch	st0,st2
 	loop	ROTATE
+nop
 
 	fld	st1
 	fmul	st0,st0
@@ -122,22 +126,19 @@ ROTATE	fld	st3
 	mov	al,-48
 STORE	add	al,[fs:bx+si]
 	add	[di],al
-	inc	di
 
+	inc	di
 	inc	bp
 	cmp	bp,160
+_EYE:
 
 EYE	equ	$-2
-	nop
-	nop
-	nop
 
 	jnz	TUBEX
 
 	inc	dx
 	cmp	dx,byte 80
 	jnz	TUBEY
-
 
 	pop	si
 	mov	di,(100-SCREEN/2)*320
@@ -162,7 +163,7 @@ BLUR	dec	si
 	
 	;resb 0x20
 	;db	41,0,0C3h,3Ch
-	db	42,0,0C3h,3dh
-	
-TEXUV	
-	db	"baze"
+	db	22,1,0C3h,3ch
+
+TEXUV
+nop

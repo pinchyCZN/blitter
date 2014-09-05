@@ -144,8 +144,8 @@ int set_pixel(BYTE *buf,int x,int y,BYTE R,BYTE G,BYTE B)
 		return 0;
 	if(y<0)
 		return 0;
-	offset=x*3+BUF_SIZE-BUF_WIDTH*3-y*BUF_WIDTH*3;
-offset=x*3+y*BUF_WIDTH*3;
+	//offset=x*3+BUF_SIZE-BUF_WIDTH*3-y*BUF_WIDTH*3;
+	offset=x*3+y*BUF_WIDTH*3;
 	if(offset<0)
 		return 0;
 	if((offset+2)>=BUF_SIZE)
@@ -160,10 +160,14 @@ offset=x*3+y*BUF_WIDTH*3;
 
 int set_3dpixel(BYTE *buf,float *x,float *y,float *z,BYTE R,BYTE G,BYTE B)
 {
-	float x1=0,y1=0;
-	if(z!=0){
-		x1=(*x)*scale/(*z);
-		y1=(*y)*scale/(*z);
+	float x1=0,y1=0,z1;
+	z1=*z;
+	z1+=100;
+	if(z1>0){
+		x1=(*x)*scale/(z1);
+		y1=(*y)*scale/(z1);
+		x1+=BUF_WIDTH/2;
+		y1+=BUF_HEIGHT/2;
 		set_pixel(buf,x1,y1,R,G,B);
 	}
 	return 0;
@@ -313,14 +317,15 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			y=HIWORD(lparam);
 			if(key&MK_LBUTTON){
 				x=xpos-x;
-				rx=x;
+				ry=x;
 				y=ypos-y;
-				ry=y;
-				printf("%f %f\n",rx,ry);
+				rx=y;
+				printf("rz=%.1f ry=%.1f\n",rx,ry);
 			}
 			if(key&MK_RBUTTON){
-				y=ypos-y;
-				rz=y;
+				x=xpos-x;
+				rz=-x;
+				printf("z=%.1f\n",rz);
 			}
 			update_title(hwnd);
 		}
@@ -352,6 +357,8 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 		case 0xBB:
 			break;
 		case 'Q':
+			rx=ry=rz=0;
+			printf("angles reset\n");
 			break;
 		case 'W':
 			break;
@@ -366,12 +373,14 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 				scale+=10;
 			else
 				scale++;
+			printf("scale=%i\n",scale);
 			break;
 		case 'Z':
 			if(shift)
 				scale-=10;
 			else
 				scale--;
+			printf("scale=%i\n",scale);
 			break;
 		case 0xC0:
 			change_direction(0);
@@ -379,8 +388,8 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			break;
 		case '0':
 		case '1':
-			tube();
-			break;
+			//tube();
+			//break;
 		case '2':
 		case '3':
 		case '4':

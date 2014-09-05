@@ -423,17 +423,30 @@ int save_image(char *buf)
 		fclose(f);
 	}
 }
+/*
+cx=1
+cy=1
+cz=cos(*rz/(57.2957795));
 
+sx=0
+sy=0
+sz=sin(*rz/(57.2957795));
+
+tx=(*x)*cz+(*y)*sz;
+ty=(*x)*(-sz)+(*y)*(cz);
+tz=(*z);
+*/
 int rotate_3d(float *x,float *y,float *z,float *rx,float *ry,float *rz)
 {
 	float cx,cy,cz,sx,sy,sz;
 	float tx,ty,tz;
-	cx=cos(*rx/(57.2957795));
-	cy=cos(*ry/(57.2957795));
-	cz=cos(*rz/(57.2957795));
-	sx=sin(*rx/(57.2957795));
-	sy=sin(*ry/(57.2957795));
-	sz=sin(*rz/(57.2957795));
+#define RID 57.2957795
+	cx=cos(*rx/(RID));
+	cy=cos(*ry/(RID));
+	cz=cos(*rz/(RID));
+	sx=sin(*rx/(RID));
+	sy=sin(*ry/(RID));
+	sz=sin(*rz/(RID));
 	tx=(*x)*cy*cz+(*y)*cy*sz-(*z)*sy;
 	ty=(*x)*(sx*sy*cz-cx*sz)+(*y)*(sx*sy*sz+cx*cz)+(*z)*sx*cy;
 	tz=(*x)*(cx*sy*cz+sx*sz)+(*y)*(cx*sy*sz-sx*cz)+(*z)*cx*cy;
@@ -443,13 +456,47 @@ int rotate_3d(float *x,float *y,float *z,float *rx,float *ry,float *rz)
 	return TRUE;
 }
 
+static int stars[100*3];
 
 int do_3d(char *buffer,float *rx,float *ry,float *rz)
 {
-
+	static int init=TRUE;
 	int i=0,j=0,k=0;
+	if(init){
+		for (i=0;i<sizeof(stars)/3;i+=3){
+			stars[i]=-50+rand()%100;
+			stars[i+1]=-50+rand()%100;
+			stars[i+2]=-50+rand()%100;
+		}
+		init=FALSE;
+	}
+	for (i=0;i<sizeof(stars)/3;i+=3){
+		float x,y,z;
+		unsigned char c;
+		float _c;
+		x=stars[i];
+		y=stars[i+1];
+		z=stars[i+2]+zpos;
+		//x=10;
+		//y=10;
+		//z=10;
+
+		rotate_3d(&x,&y,&z,rx,ry,rz);
+		
+		_c=255-z*10;
+		if(_c>255)
+			_c=255;
+		else if(_c<0)
+			_c=0;
+		c=_c;
+		set_3dpixel(buffer,&x,&y,&z,c,c,c);
+
+	}
+
+	/*
 	for(i=0;i<20;i++){
-		for(j=0;j<20;j++){
+		for(j=0;j<20;j++)
+		{
 			for(k=0;k<20;k++)
 			{
 				float x,y,z;
@@ -461,6 +508,7 @@ int do_3d(char *buffer,float *rx,float *ry,float *rz)
 			}
 		}
 	}
+	*/
 }
 
 int tube()
