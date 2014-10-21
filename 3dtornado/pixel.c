@@ -456,27 +456,27 @@ int rotate_3d(float *x,float *y,float *z,float *rx,float *ry,float *rz)
 	return TRUE;
 }
 
-static int stars[100*3];
+static int stars[3*3];
 
 int do_3d(char *buffer,float *rx,float *ry,float *rz)
 {
 	static int init=TRUE;
 	int i=0,j=0,k=0;
 	if(init){
-		for (i=0;i<sizeof(stars)/3;i+=3){
-			stars[i]=-50+rand()%100;
-			stars[i+1]=-50+rand()%100;
-			stars[i+2]=-50+rand()%100;
+		for (i=0;i<sizeof(stars)/(3*sizeof(int));i++){
+			stars[i*3]=-50+rand()%100;
+			stars[i*3+1]=-50+rand()%100;
+			stars[i*3+2]=-50+rand()%100;
 		}
 		init=FALSE;
 	}
-	for (i=0;i<sizeof(stars)/3;i+=3){
+	for (i=0;i<sizeof(stars)/(3*sizeof(int));i++){
 		float x,y,z;
 		unsigned char c;
 		float _c;
-		x=stars[i];
-		y=stars[i+1];
-		z=stars[i+2]+zpos;
+		x=stars[i*3];
+		y=stars[i*3+1];
+		z=stars[i*3+2]+zpos;
 		//x=10;
 		//y=10;
 		//z=10;

@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <conio.h>
 #include <fcntl.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include "resource.h"
 
 HWND	hWindow;
@@ -14,7 +16,6 @@ int scale=256;
 float rx=0,ry=0,rz=0;
 
 DWORD tick=0;
-RECT client_rect;
 int screen_updated=TRUE;
 #define BUF_WIDTH 640
 #define BUF_HEIGHT 480
@@ -22,6 +23,7 @@ int BUF_SIZE=BUF_WIDTH*BUF_HEIGHT*3;
 
 int stretch=0;
 BYTE *buffer=0;
+int bwidth=0,bheight=0,bdepth=0;
 
 
 #define TIME1 tick=GetTickCount();
@@ -168,7 +170,15 @@ int set_3dpixel(BYTE *buf,float *x,float *y,float *z,BYTE R,BYTE G,BYTE B)
 		y1=(*y)*scale/(z1);
 		x1+=BUF_WIDTH/2;
 		y1+=BUF_HEIGHT/2;
-		set_pixel(buf,x1,y1,R,G,B);
+		{
+			int i,j,max;
+			max=floor(sqrt(abs(z1)));
+			if(max<=0)
+				max=1;
+			for(i=0;i<max;i++)
+				for(j=0;j<max;j++)
+					set_pixel(buf,x1+i,y1+j,R,G,B);
+		}
 	}
 	return 0;
 }
@@ -221,15 +231,296 @@ int update_title(HWND hwnd)
 	SetWindowText(hwnd,str);
 	return 0;
 }
+LRESULT CALLBACK win_view1_proc(HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
+{
 
+	switch(msg){
+	case WM_CREATE:
+		return 0;
+	}
+	return DefWindowProc(hwnd,msg,wparam,lparam);
+}
+GLfloat ambient[]={1.0,1.0,1.0,0.0};
+GLfloat light_position[]={-5.0,-10.0,10.0,0.0};
+GLfloat white_light[]={1.0,1.0,1.0,1.0};
+void gl_init(void)
+{
+//	return;
+	glClearColor(0.0,0.0,0.0,0.0);
+//	glShadeModel(GL_FLAT);
+//	glShadeModel(GL_SMOOTH);
+	glLightfv(GL_LIGHT0,GL_POSITION,light_position);
+	glLightfv(GL_LIGHT0,GL_DIFFUSE,white_light);
+	glLightfv(GL_LIGHT0,GL_SPECULAR,white_light);
+	glLightfv(GL_LIGHT0,GL_AMBIENT,ambient);
+    glMatrixMode(GL_PROJECTION);
+    glFrustum(-0.08, 0.08F, -0.06F, 0.06F, 0.1F, 1000.0F);
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_DEPTH_TEST);
+//		glLightfv(GL_LIGHT0,GL_POSITION,light_position);
+
+/*
+    glMatrixMode(GL_PROJECTION);
+    glFrustum(-0.5F, 0.5F, -0.5F, 0.5F, 1.0F, 3.0F);
+
+    glMatrixMode(GL_MODELVIEW);
+    glTranslatef(0.0F, 0.0F, -2.0F);
+
+    glRotatef(30.0F, 1.0F, 0.0F, 0.0F);
+    glRotatef(30.0F, 0.0F, 1.0F, 0.0F);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+*/
+}
+int setupPixelFormat(HDC hDC)
+{
+    PIXELFORMATDESCRIPTOR pfd;
+    int pixelFormat;
+	memset(&pfd,0,sizeof(pfd));
+    pfd.nSize = sizeof(pfd);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 24;
+    pfd.cDepthBits = 16;
+    pfd.iLayerType = PFD_MAIN_PLANE;
+
+    pixelFormat = ChoosePixelFormat(hDC, &pfd);
+    if (pixelFormat == 0) {
+        MessageBox(WindowFromDC(hDC), "ChoosePixelFormat failed.", "Error",
+                MB_ICONERROR | MB_OK);
+        exit(1);
+    }
+
+    if (SetPixelFormat(hDC, pixelFormat, &pfd) != TRUE) {
+        MessageBox(WindowFromDC(hDC), "SetPixelFormat failed.", "Error",
+                MB_ICONERROR | MB_OK);
+        exit(1);
+    }
+}
+int create_view_windows(HWND hwnd,HWND *hview)
+{
+    WNDCLASS wnd;
+	RECT rect={0};
+	memset(&wnd,0,sizeof(wnd));
+	wnd.style=CS_OWNDC;
+	wnd.cbClsExtra=0;
+	wnd.cbWndExtra=0;
+	wnd.hInstance=ghInstance;
+	wnd.hIcon=LoadIcon(NULL,IDI_APPLICATION);
+	wnd.hCursor=LoadCursor(NULL,IDC_ARROW);
+	wnd.hbrBackground=GetStockObject(BLACK_BRUSH);
+	wnd.lpszMenuName=NULL;
+	wnd.lpszClassName="VIEW1";
+	wnd.lpfnWndProc=win_view1_proc;
+	if(hview){
+		HWND hv;
+		RegisterClass(&wnd);
+		GetClientRect(hwnd,&rect);
+		hv=CreateWindow(wnd.lpszClassName,"view1",WS_CHILD|WS_VISIBLE,
+			0,0,0,0,hwnd,NULL,ghInstance,NULL);
+		*hview=hv;
+	}
+}
+int init_ogl(HWND hwnd,HGLRC *hglrc,HDC *hdc)
+{
+	if(hwnd && hglrc && hdc){
+		HDC hDC;
+		HGLRC hGLRC;
+		hDC=GetDC(hwnd);
+		if(hDC){
+			setupPixelFormat(hDC);
+			hGLRC=wglCreateContext(hDC);
+			if(hGLRC){
+				wglMakeCurrent(hDC,hGLRC);
+				if(hglrc)
+					*hglrc=hGLRC;
+				gl_init();
+			}
+			//SelectObject(hDC,GetStockObject(SYSTEM_FONT));
+			//wglUseFontBitmaps(hDC,0,255,1000);
+			//ReleaseDC(hv,hDC);
+			if(hdc)
+				*hdc=hDC;
+		}
+	}
+
+}
+void perspectiveGL( GLdouble fovY, GLdouble aspect, GLdouble zNear, GLdouble zFar )
+{
+	const GLdouble pi = 3.1415926535897932384626433832795;
+	GLdouble fW, fH;
+	fH = tan( fovY / 360 * pi ) * zNear;
+	fW = fH * aspect;
+	glFrustum( -fW, fW, -fH, fH, zNear, zFar );
+}
+void reshape(int w, int h)
+{
+	glPushMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	perspectiveGL(25.0,(GLfloat)w/(GLfloat)h,.1,10000.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glViewport(0,0,(GLsizei)w,(GLsizei)h);
+	glPopMatrix();
+}
+int render_rect(float *rot,float *trans)
+{
+	static float theta=0;
+	int i;
+	unsigned char indices[] = { 0, 1, 2, 0, 2, 3 };
+	float vertices[] = { 
+		0, 0, 0,
+		1, 0, 0,
+		1, 1, 0,
+		0, 1, 0
+	};
+	float normals[] = { 
+		0, 0, 1,
+		0, 0, 1,
+		0, 0, 1,
+		0, 0, 1
+	};
+	for(i=0;i<4;i++){
+		//vertices[ 3 * i + 0 ] *= size[0];
+		//vertices[ 3 * i + 1 ] *= size[1];
+	}
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glTranslatef(trans[0], trans[1], trans[2]);
+	glRotatef(rot[0], 1.0f, 0.0f, 0.0f);
+	glRotatef(rot[1], 0.0f, 1.0f, 0.0f);
+	glRotatef(rot[2], 0.0f, 0.0f, 1.0f);
+	//glRotatef(theta, 0.0f, 1.0f, 0.0f);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glDisable(GL_TEXTURE_2D);
+	glVertexPointer(3,GL_FLOAT,0,vertices);
+	glNormalPointer(GL_FLOAT,0,normals);
+	glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_BYTE,indices);
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	theta+=1;
+
+}
+
+
+int render_cube()
+{
+	float rot[]={0,0,0};
+	float trans[]={0,0,0};
+	static theta=0;
+
+	trans[0]=-.5;
+	trans[1]=-.5;
+	trans[2]=.5;
+	render_rect(rot,trans); //front
+
+	trans[0]=-.5;
+	trans[1]=.5;
+	trans[2]=-.5;
+	rot[0]=180;
+	render_rect(rot,trans); //back
+	theta++;
+
+	trans[0]=-.5;
+	trans[1]=.5;
+	trans[2]=.5;
+	rot[0]=-90;
+	render_rect(rot,trans); //top
+
+	trans[0]=-.5;
+	trans[1]=-.5;
+	trans[2]=-.5;
+	rot[0]=90;
+	render_rect(rot,trans); //bottom
+
+	trans[0]=.5;
+	trans[1]=-.5;
+	trans[2]=.5;
+	rot[0]=0;
+	rot[1]=90;
+	render_rect(rot,trans); //right
+
+	trans[0]=-.5;
+	trans[1]=-.5;
+	trans[2]=-.5;
+	rot[0]=0;
+	rot[1]=-90;
+	render_rect(rot,trans); //left
+}
+int do_triangle()
+{
+	static float theta=0;
+	float gx=0,gy=0,gz=0;
+	float grx=0,gry=0,grz=0;
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//	glColor3f(1.0,0.0,0.0);
+
+	glMatrixMode(GL_MODELVIEW);
+//	glMatrixMode(GL_PROJECTION);
+	
+	glLoadIdentity();
+	glTranslatef(gx,gy,gz);
+	glRotatef(grx,1,0,0);
+	glRotatef(gry,0,1,0);
+	glRotatef(grz,0,0,1);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glPushMatrix();
+	glRotatef(theta, 0.0f, 1.0f, 1.0f);
+
+	render_cube();
+	/*
+	glBegin(GL_TRIANGLES);
+
+		glColor3f(1.0f, 0.0f, 0.0f);   glVertex2f(0.0f,   1.0f);
+		glColor3f(0.0f, 1.0f, 0.0f);   glVertex2f(0.87f,  -0.5f);
+		glColor3f(0.0f, 0.0f, 1.0f);   glVertex2f(-0.87f, -0.5f);
+
+	glEnd();
+*/
+	glPopMatrix();
+
+	theta += 1.0f;
+	Sleep (1);
+}
+int display_view1(HWND hwnd,HGLRC hglrc)
+{
+	HDC hdc;
+	if(hwnd==0 || hglrc==0)
+		return FALSE;
+	hdc=GetDC(hwnd);
+	if(hdc){
+		wglMakeCurrent(hdc,hglrc);
+		do_triangle();		
+		SwapBuffers(hdc);
+	}
+}
+int resize_view(HWND hwnd,HWND hview)
+{
+	RECT rect={0};
+	GetClientRect(hwnd,&rect);
+	reshape(rect.right,rect.bottom);
+	return MoveWindow(hview,0,0,rect.right,rect.bottom,FALSE);
+}
 LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 {
-	HDC hdc,hdcMem;
 	PAINTSTRUCT ps;
 	BITMAPINFO bmi;
 	char str[255];
 	static int timer=FALSE;
 	static int xpos=0,ypos=0,LMB=FALSE,dx=0,dy=0;
+	static HWND hview=0;
+	static HGLRC hglrc=0;
+	static HDC hdc=0;
 	int i;
 
 #ifdef _DEBUG
@@ -239,27 +530,32 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 	switch(message)
 	{
 	case WM_INITDIALOG:
+		buffer=malloc(3*4096);
+		bwidth=bheight=bdepth=4096;
 		create_grippy(hwnd);
 		BringWindowToTop(hwnd);
-		GetClientRect(hwnd,&client_rect);
-		memset(buffer,0,BUF_SIZE);
 		BringWindowToTop(hwnd);
 		update_title(hwnd);
 		SendMessage(hwnd,WM_KEYDOWN,VK_TAB,0);
 		SendMessage(hwnd,WM_LBUTTONDOWN,0,0);
+		create_view_windows(hwnd,&hview);
+		resize_view(hwnd,hview);
+		init_ogl(hview,&hglrc,&hdc);
 		break;
 	case WM_SIZE:
-		client_rect.right=LOWORD(lparam);
-		client_rect.bottom=HIWORD(lparam);
-		grippy_move(hwnd);
-		InvalidateRect(hwnd,NULL,TRUE);
+		{
+			int w,h;
+			w=LOWORD(lparam);
+			h=HIWORD(lparam);
+			grippy_move(hwnd);
+			resize_view(hwnd,hview);
+			reshape(w,h);
+		}
 		break;
 	case WM_TIMER:
 		if(LMB)
 			handle_click(xpos,ypos);
-		memset(buffer,0,BUF_SIZE);
-		do_3d(buffer,&rx,&ry,&rz);
-		InvalidateRect(hwnd,NULL,TRUE);
+		display_view1(hview,hglrc);
 		break;
 	case WM_COMMAND:
 
@@ -277,11 +573,8 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			break;
 		}
 		break;
-	case WM_ERASEBKGND:
-		return TRUE;
-		break;
 	case WM_PAINT:
-//		TIME1
+	/*
 		hdc=BeginPaint(hwnd,&ps);
 		memset(&bmi,0,sizeof(BITMAPINFO));
 		bmi.bmiHeader.biBitCount=24;
@@ -293,9 +586,9 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			StretchDIBits(hdc,0,0,client_rect.right,client_rect.bottom,0,0,BUF_WIDTH,BUF_HEIGHT,buffer,&bmi,DIB_RGB_COLORS,SRCCOPY);
 		else
 			SetDIBitsToDevice(hdc,0,0,BUF_WIDTH,BUF_HEIGHT,0,0,0,BUF_WIDTH,buffer,&bmi,DIB_RGB_COLORS);
-		EndPaint(hwnd,&ps);
 		screen_updated=TRUE;
-//		TIME2
+		EndPaint(hwnd,&ps);
+		*/
 		break;
 	case WM_CLOSE:
 	case WM_QUIT:
@@ -337,8 +630,6 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			SendMessage(hwnd,WM_KEYDOWN,VK_PRIOR,0);
 		break;
 	case WM_KEYUP:
-		drawbuffer(buffer);
-		//InvalidateRect(hwnd,NULL,TRUE);
 		break;
 	case WM_KEYDOWN:
 		{
@@ -539,7 +830,6 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			break;
 		}
 		update_title(hwnd);
-		InvalidateRect(hwnd,NULL,TRUE);   // force redraw
 		}
 		break;
 	}
@@ -554,11 +844,6 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,PSTR szCmdLine,in
 #ifdef _DEBUG
 	open_console();
 #endif
-	buffer=malloc(BUF_SIZE);
-	if(buffer==0){
-		MessageBox(0,"cant allocate image buffer!","barcode",MB_ICONERROR|MB_SYSTEMMODAL);
-		return -1;
-	}
 	
 	hWindow=CreateDialog(ghInstance,MAKEINTRESOURCE(IDD_DIALOG1),NULL,MainDlg);
 	if(!hWindow){
@@ -572,7 +857,6 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,PSTR szCmdLine,in
 #ifdef _DEBUG
 	adjust_windows(hWindow);
 #endif
-	memset(buffer,0,BUF_SIZE);
 
 	while(GetMessage(&msg,NULL,0,0))
 	{
@@ -599,6 +883,5 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,PSTR szCmdLine,in
 			}
 		}
 	}
-	free(buffer);
 	return msg.wParam;
 }
