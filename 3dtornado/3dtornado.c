@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <conio.h>
 #include <fcntl.h>
+#include <math.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "resource.h"
@@ -13,6 +14,8 @@ HINSTANCE	ghInstance;
 
 
 int scale=256;
+float gx=0,gy=0,gz=-100;
+float grx=0,gry=0,grz=0;
 float rx=0,ry=0,rz=0;
 
 DWORD tick=0;
@@ -23,7 +26,10 @@ int BUF_SIZE=BUF_WIDTH*BUF_HEIGHT*3;
 
 int stretch=0;
 BYTE *buffer=0;
-int bwidth=0,bheight=0,bdepth=0;
+BYTE *bufA,*bufB;
+#define SIZE_MATRIX 50
+int bwidth=SIZE_MATRIX,bheight=SIZE_MATRIX,bdepth=SIZE_MATRIX;
+int swap=0;
 
 
 #define TIME1 tick=GetTickCount();
@@ -182,7 +188,9 @@ int set_3dpixel(BYTE *buf,float *x,float *y,float *z,BYTE R,BYTE G,BYTE B)
 	}
 	return 0;
 }
-
+int do_3d_tornado(BYTE src,BYTE dst,int size)
+{
+}
 int print_text(char *str,char *buf,int x,int y)
 {
 	extern char bitmapfonts[];
@@ -205,10 +213,7 @@ int print_text(char *str,char *buf,int x,int y)
 	}
 	return 0;
 }
-int drawbuffer(BYTE *buffer)
-{
-	return 0;
-}
+
 void display_help(HWND hwnd)
 {
 	MessageBox(hwnd,
@@ -231,12 +236,68 @@ int update_title(HWND hwnd)
 	SetWindowText(hwnd,str);
 	return 0;
 }
+int print_globs()
+{
+	printf("%3.2f %3.2f %3.2f , %3.2f %3.2f %3.2f\n",grx,gry,grz,gx,gy,gz);
+}
 LRESULT CALLBACK win_view1_proc(HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
 {
-
+	static POINT mpoint;
 	switch(msg){
 	case WM_CREATE:
 		return 0;
+	case WM_MBUTTONDOWN:
+	case WM_RBUTTONDOWN:
+	case WM_LBUTTONDOWN:
+		mpoint.x=LOWORD(lparam);
+		mpoint.y=HIWORD(lparam);
+		SetFocus(hwnd);
+		print_globs();
+		break;
+	case WM_MOUSEWHEEL:
+		{
+			short delta=HIWORD(wparam);
+			int mod=LOWORD(wparam);
+			int scale=1;
+			if(mod&(MK_RBUTTON|MK_CONTROL))
+				scale=10;
+			else if(mod&MK_SHIFT)
+				scale=100;
+			delta/=120;
+			delta*=scale;
+			gz+=delta;
+			print_globs();
+		}
+		break;
+	case WM_MOUSEMOVE:
+		{
+			POINT p;
+			int deltax,deltay;
+			int mod=LOWORD(wparam);
+			p.x=LOWORD(lparam);
+			p.y=HIWORD(lparam);
+			deltax=p.x-mpoint.x;
+			deltay=p.y-mpoint.y;
+
+			if(wparam&MK_LBUTTON){
+				gry-=deltax;
+				grx-=deltay;
+				print_globs();
+			}
+			if(wparam&MK_RBUTTON){
+				float scale=4;
+				if(mod&MK_SHIFT)
+					scale=.99;
+				else if(mod&MK_CONTROL)
+					scale=8;
+
+				gx+=(float)deltax/scale;
+				gy-=(float)deltay/scale;
+				print_globs();
+			}
+			mpoint=p;
+		}
+		break;
 	}
 	return DefWindowProc(hwnd,msg,wparam,lparam);
 }
@@ -454,15 +515,35 @@ int render_cube()
 	rot[1]=-90;
 	render_rect(rot,trans); //left
 }
+int do_matrix()
+{
+	int i,j,k;
+	float cx,cy,cz;
+	cx=-bwidth/2;
+	cy=-bheight/2;
+	cz=-bdepth/2;
+	for(i=0;i<bwidth;i++){
+		for(j=0;j<bheight;j++){
+			for(k=0;k<bdepth;k++){
+				if(buffer[i+j*bwidth+(k*bwidth*bheight)]){
+					glPushMatrix();
+					glTranslatef(cx+i,cy+j,cz+k);
+					render_cube();
+					glPopMatrix();
+				}
+			}
+		}
+	}
+}
 int do_triangle()
 {
 	static float theta=0;
-	float gx=0,gy=0,gz=0;
-	float grx=0,gry=0,grz=0;
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 //	glColor3f(1.0,0.0,0.0);
 
 	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 //	glMatrixMode(GL_PROJECTION);
 	
 	glLoadIdentity();
@@ -471,14 +552,11 @@ int do_triangle()
 	glRotatef(gry,0,1,0);
 	glRotatef(grz,0,0,1);
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
 
-	glPushMatrix();
 	glRotatef(theta, 0.0f, 1.0f, 1.0f);
-
-	render_cube();
-	/*
+//	render_cube();
+	do_matrix();
+	if(0){
 	glBegin(GL_TRIANGLES);
 
 		glColor3f(1.0f, 0.0f, 0.0f);   glVertex2f(0.0f,   1.0f);
@@ -486,7 +564,8 @@ int do_triangle()
 		glColor3f(0.0f, 0.0f, 1.0f);   glVertex2f(-0.87f, -0.5f);
 
 	glEnd();
-*/
+	}
+
 	glPopMatrix();
 
 	theta += 1.0f;
@@ -500,8 +579,13 @@ int display_view1(HWND hwnd,HGLRC hglrc)
 	hdc=GetDC(hwnd);
 	if(hdc){
 		wglMakeCurrent(hdc,hglrc);
-		do_triangle();		
+		if(swap)
+			buffer=bufA;
+		else
+			buffer=bufB;
+		do_triangle();
 		SwapBuffers(hdc);
+		swap=!swap;
 	}
 }
 int resize_view(HWND hwnd,HWND hview)
@@ -510,6 +594,15 @@ int resize_view(HWND hwnd,HWND hview)
 	GetClientRect(hwnd,&rect);
 	reshape(rect.right,rect.bottom);
 	return MoveWindow(hview,0,0,rect.right,rect.bottom,FALSE);
+}
+int rand_fill(unsigned char *buf,int size)
+{
+	int i;
+	memset(buffer,0,size);
+	for(i=0;i<size;i++){
+		if(rand()&1)
+			buffer[i]=1;
+	}
 }
 LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 {
@@ -530,8 +623,13 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 	switch(message)
 	{
 	case WM_INITDIALOG:
-		buffer=malloc(3*4096);
-		bwidth=bheight=bdepth=4096;
+		bufA=malloc(bwidth*bheight*bdepth);
+		bufB=malloc(bwidth*bheight*bdepth);
+		if(bufA==0 || bufB==0)
+			MessageBox(hwnd,"malloc failed","error",MB_OK);
+		else{
+			rand_fill(bufA,bwidth*bheight*bdepth);
+		}
 		create_grippy(hwnd);
 		BringWindowToTop(hwnd);
 		BringWindowToTop(hwnd);
@@ -539,8 +637,8 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 		SendMessage(hwnd,WM_KEYDOWN,VK_TAB,0);
 		SendMessage(hwnd,WM_LBUTTONDOWN,0,0);
 		create_view_windows(hwnd,&hview);
-		resize_view(hwnd,hview);
 		init_ogl(hview,&hglrc,&hdc);
+		resize_view(hwnd,hview);
 		break;
 	case WM_SIZE:
 		{
