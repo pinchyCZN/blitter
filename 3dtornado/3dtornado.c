@@ -27,7 +27,7 @@ int BUF_SIZE=BUF_WIDTH*BUF_HEIGHT*3;
 int stretch=0;
 BYTE *buffer=0;
 BYTE *bufA,*bufB;
-#define SIZE_MATRIX 50
+#define SIZE_MATRIX 25
 int bwidth=SIZE_MATRIX,bheight=SIZE_MATRIX,bdepth=SIZE_MATRIX;
 int swap=0;
 
@@ -586,6 +586,10 @@ int display_view1(HWND hwnd,HGLRC hglrc)
 		do_triangle();
 		SwapBuffers(hdc);
 		swap=!swap;
+		if(swap){
+			int i;
+			for(i=0;i<SIZE_MATRIX*3;i++)
+		}
 	}
 }
 int resize_view(HWND hwnd,HWND hview)
