@@ -595,13 +595,13 @@ int resize_view(HWND hwnd,HWND hview)
 	reshape(rect.right,rect.bottom);
 	return MoveWindow(hview,0,0,rect.right,rect.bottom,FALSE);
 }
-int rand_fill(unsigned char *buf,int size)
+int rand_fill(unsigned char *buf,unsigned int size)
 {
 	int i;
-	memset(buffer,0,size);
+	memset(buf,0,size);
 	for(i=0;i<size;i++){
 		if(rand()&1)
-			buffer[i]=1;
+			buf[i]=1;
 	}
 }
 LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
