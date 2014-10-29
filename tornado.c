@@ -25,12 +25,14 @@ BYTE valueshift[]={
 };
 int compute_shift()
 {
-	static int i=0;
+	static int i=0,count=0;
 	shift2=shift1;
-#ifdef _DEBUG
-//	shift2=shift1=0;
-//	return;
-#endif
+	count++;
+	if(FALSE)
+	{
+	shift2=shift1=0;
+	return;
+	}
 	if(shift_rand){
 		static sign=-1;
 		shift1=8*sign;
@@ -90,13 +92,11 @@ int blit(char *src,char *dst,int sx,int sy,int dx,int dy,
 			move_pixel(src,dst,sx+x,sy+y,dx+x,dy+y);
 		}
 	}
-#ifndef _DEBUG
-	if(FALSE)
-#endif
+	//if(FALSE)
 	{
 		int show_src=FALSE;
 		int show_dst=FALSE;
-		show_src=TRUE;
+		//show_src=TRUE;
 		show_dst=TRUE;
 		for(x=0;x<w;x++){
 			if(show_src){
@@ -444,12 +444,12 @@ int tornado(char *buf,int init)
 				//x+direction[0]*(x/BSIZE-centery)-direction[1]*(y/BSIZE-centery)+k,
 				//y+direction[2]*(x/BSIZE-centerx)+direction[3]*(y/BSIZE-centerx)+k,
 				get_xpos(x,y,k),get_ypos(x,y,k),
-				x,y,BSIZE,BSIZE);
+				x+k,y+k,BSIZE,BSIZE);
 		}
 	}
 	printf("%i ",k);
 	k=shift1;
-	i=31;
+	k=0;
 	copy_to_main(dst,buf,k,k);
 //	blit(dst,buf,k,k,0,0,640,480);
 	//blit(dst,buf,0,0,0,0,WIDTH,HEIGHT);

@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include <string.h>
 #include <conio.h>
 #include <fcntl.h>
 #include <math.h>
@@ -188,8 +189,12 @@ int set_3dpixel(BYTE *buf,float *x,float *y,float *z,BYTE R,BYTE G,BYTE B)
 	}
 	return 0;
 }
+int move_point(BYTE src,BYTE dst,int x1,int y1,int z1,int x2,int y2,int z2)
+{
+}
 int do_3d_tornado(BYTE src,BYTE dst,int size)
 {
+
 }
 int print_text(char *str,char *buf,int x,int y)
 {
@@ -580,16 +585,13 @@ int display_view1(HWND hwnd,HGLRC hglrc)
 	if(hdc){
 		wglMakeCurrent(hdc,hglrc);
 		if(swap)
-			buffer=bufA;
-		else
 			buffer=bufB;
+		else
+			buffer=bufA;
 		do_triangle();
 		SwapBuffers(hdc);
+		do_3d_tornado(buffer,swap?bufA:bufB,SIZE_MATRIX);
 		swap=!swap;
-		if(swap){
-			int i;
-			for(i=0;i<SIZE_MATRIX*3;i++)
-		}
 	}
 }
 int resize_view(HWND hwnd,HWND hview)
