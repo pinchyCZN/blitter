@@ -192,8 +192,28 @@ int set_3dpixel(BYTE *buf,float *x,float *y,float *z,BYTE R,BYTE G,BYTE B)
 int move_point(BYTE src,BYTE dst,int x1,int y1,int z1,int x2,int y2,int z2)
 {
 }
+int blit_3d(char *src,char *dst,int x,int y,int z,int dx,int dy,int dz,int w,int h,int d)
+{
+}
+int get3d_dst(int *x,int *y,int *z,int shift)
+{
+}
 int do_3d_tornado(BYTE src,BYTE dst,int size)
 {
+	int x,y,z;
+	int bsize=size/2;
+	int shift=0;
+	for(x=0;x<size;x+=bsize){
+		for(y=0;y<size;y+=bsize){
+			for(z=0;z<size;z+=bsize){
+				int dx=x,dy=y,dz=z;
+				int w,h,d;
+				w=h=d=bsize;
+				get3d_dst(&dx,&dy,&dz,shift);
+				blit_3d(src,dst,x,y,z,dx,dy,dz,w,h,d);
+			}
+		}
+	}
 
 }
 int print_text(char *str,char *buf,int x,int y)
