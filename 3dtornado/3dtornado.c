@@ -28,7 +28,7 @@ int BUF_SIZE=BUF_WIDTH*BUF_HEIGHT*3;
 int stretch=0;
 BYTE *buffer=0;
 BYTE *bufA,*bufB;
-#define SIZE_MATRIX 25
+#define SIZE_MATRIX 36
 int bwidth=SIZE_MATRIX,bheight=SIZE_MATRIX,bdepth=SIZE_MATRIX;
 int swap=0;
 
@@ -192,13 +192,41 @@ int set_3dpixel(BYTE *buf,float *x,float *y,float *z,BYTE R,BYTE G,BYTE B)
 int move_point(BYTE src,BYTE dst,int x1,int y1,int z1,int x2,int y2,int z2)
 {
 }
-int blit_3d(char *src,char *dst,int x,int y,int z,int dx,int dy,int dz,int w,int h,int d)
+int blit_3d(char *src,char *dst,int x,int y,int z,int dx,int dy,int dz,int w,int h,int d,int size)
 {
+	int i,j,k;
+	for(i=0;i<w;i++){
+		for(j=0;j<h;j++){
+			for(k=0;k<d;k++){
+				int t=0;
+				if((x+i)>=0 && (x+i)<size && (y+j)>=0 && (y+j)<size && (z+k)>=0 && (z+k)<size)
+					t=src[x+i+(y+j)*size+(z+k)*size*size];
+				if((dx+i)>=0 && (dx+i)<size && (dy+j)>=0 && (dy+j)<size && (dz+k)>=0 && (dz+k)<size)
+					dst[dx+i+(dy+j)*size+(dz+k)*size*size]=t;
+			}
+		}
+	}
 }
-int get3d_dst(int *x,int *y,int *z,int shift)
+int get3d_dst(int *dx,int *dy,int *dz,int shift,int size)
 {
+	int cx,cy,cz;
+	cx=size/2;
+	cy=size/2;
+	cz=size/2;
+	if(*dx<cx)
+		(*dx)--;
+	else
+		(*dx)++;
+	if(*dy<cy)
+		(*dy)--;
+	else
+		(*dy)++;
+	if(*dz<cz)
+		(*dz)--;
+	else
+		(*dz)++;
 }
-int do_3d_tornado(BYTE src,BYTE dst,int size)
+int do_3d_tornado(BYTE *src,BYTE *dst,int size)
 {
 	int x,y,z;
 	int bsize=size/2;
@@ -209,8 +237,8 @@ int do_3d_tornado(BYTE src,BYTE dst,int size)
 				int dx=x,dy=y,dz=z;
 				int w,h,d;
 				w=h=d=bsize;
-				get3d_dst(&dx,&dy,&dz,shift);
-				blit_3d(src,dst,x,y,z,dx,dy,dz,w,h,d);
+				get3d_dst(&dx,&dy,&dz,shift,size);
+				blit_3d(src,dst,x,y,z,dx,dy,dz,w,h,d,size);
 			}
 		}
 	}
