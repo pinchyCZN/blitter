@@ -201,8 +201,12 @@ int blit_3d(char *src,char *dst,int x,int y,int z,int dx,int dy,int dz,int w,int
 				int t=0;
 				if((x+i)>=0 && (x+i)<size && (y+j)>=0 && (y+j)<size && (z+k)>=0 && (z+k)<size)
 					t=src[x+i+(y+j)*size+(z+k)*size*size];
+				else
+					t=t;
 				if((dx+i)>=0 && (dx+i)<size && (dy+j)>=0 && (dy+j)<size && (dz+k)>=0 && (dz+k)<size)
 					dst[dx+i+(dy+j)*size+(dz+k)*size*size]=t;
+				else
+					t=t;
 			}
 		}
 	}
@@ -213,6 +217,7 @@ int get3d_dst(int *dx,int *dy,int *dz,int shift,int size)
 	cx=size/2;
 	cy=size/2;
 	cz=size/2;
+	return;
 	if(*dx<cx)
 		(*dx)--;
 	else
@@ -239,6 +244,7 @@ int do_3d_tornado(BYTE *src,BYTE *dst,int size)
 				w=h=d=bsize;
 				get3d_dst(&dx,&dy,&dz,shift,size);
 				blit_3d(src,dst,x,y,z,dx,dy,dz,w,h,d,size);
+				memset(src,0,size*size*size);
 			}
 		}
 	}
@@ -627,6 +633,7 @@ int do_triangle()
 int display_view1(HWND hwnd,HGLRC hglrc)
 {
 	HDC hdc;
+	static int slow=0;
 	if(hwnd==0 || hglrc==0)
 		return FALSE;
 	hdc=GetDC(hwnd);
@@ -638,8 +645,12 @@ int display_view1(HWND hwnd,HGLRC hglrc)
 			buffer=bufA;
 		do_triangle();
 		SwapBuffers(hdc);
-		do_3d_tornado(buffer,swap?bufA:bufB,SIZE_MATRIX);
-		swap=!swap;
+		slow++;
+		if(slow>0){
+			slow=0;
+			do_3d_tornado(buffer,swap?bufA:bufB,SIZE_MATRIX);
+			swap=!swap;
+		}
 	}
 }
 int resize_view(HWND hwnd,HWND hview)
@@ -805,6 +816,9 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			break;
 		case 'W':
 			break;
+		case 0xC0:
+			rand_fill(swap?bufB:bufA,bwidth*bheight*bdepth);
+			break;
 		case 'K':
 			set_offsety(1);
 			break;
@@ -825,7 +839,7 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 				scale--;
 			printf("scale=%i\n",scale);
 			break;
-		case 0xC0:
+		//case 0xC0:
 			change_direction(0);
 			rx=ry=rz=0;
 			break;
