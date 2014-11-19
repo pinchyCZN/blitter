@@ -96,7 +96,7 @@ int blit(char *src,char *dst,int sx,int sy,int dx,int dy,
 	{
 		int show_src=FALSE;
 		int show_dst=FALSE;
-		//show_src=TRUE;
+		show_src=TRUE;
 		show_dst=TRUE;
 		for(x=0;x<w;x++){
 			if(show_src){
@@ -436,6 +436,8 @@ int tornado(char *buf,int init)
 
 	compute_shift();
 	k=shift2-shift1;
+	//shift1=shift2=0;
+	k=rand()%33;
 	for(y=0;y<HEIGHT;y+=BSIZE){
 		i=0;
 		for(x=0;x<WIDTH;x+=BSIZE){
@@ -448,7 +450,7 @@ int tornado(char *buf,int init)
 		}
 	}
 	printf("%i ",k);
-	k=shift1;
+	//k=shift1;
 	k=0;
 	copy_to_main(dst,buf,k,k);
 //	blit(dst,buf,k,k,0,0,640,480);

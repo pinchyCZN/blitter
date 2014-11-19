@@ -32,7 +32,7 @@ BYTE *bufA,*bufB;
 int bwidth=SIZE_MATRIX,bheight=SIZE_MATRIX,bdepth=SIZE_MATRIX;
 int swap=0;
 int frame_step=0;
-
+int jitter=0;
 
 #define TIME1 tick=GetTickCount();
 #define TIME2 debug_printf("time=%u\n",GetTickCount()-tick);
@@ -230,8 +230,6 @@ int get3d_dst(int *dx,int *dy,int *dz,int shift,int size)
 		(*dz)--;
 	else
 		(*dz)++;
-	shift=(rand()%8)-4;
-	printf("shift=%i\n",shift);
 	(*dx)+=shift;
 	(*dy)+=shift;
 	(*dz)+=shift;
@@ -240,14 +238,15 @@ int do_3d_tornado(BYTE *src,BYTE *dst,int size)
 {
 	int x,y,z;
 	int bsize=size/2;
-	int shift=0;
+	jitter=(rand()%17)-8;
+	printf("jitter=%i\n",jitter);
 	for(x=0;x<size;x+=bsize){
 		for(y=0;y<size;y+=bsize){
 			for(z=0;z<size;z+=bsize){
 				int dx=x,dy=y,dz=z;
 				int w,h,d;
 				w=h=d=bsize;
-				get3d_dst(&dx,&dy,&dz,shift,size);
+				get3d_dst(&dx,&dy,&dz,jitter,size);
 				blit_3d(src,dst,x,y,z,dx,dy,dz,w,h,d,size);
 			}
 		}
