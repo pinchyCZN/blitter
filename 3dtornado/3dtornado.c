@@ -28,9 +28,10 @@ int BUF_SIZE=BUF_WIDTH*BUF_HEIGHT*3;
 int stretch=0;
 BYTE *buffer=0;
 BYTE *bufA,*bufB;
-#define SIZE_MATRIX 36
+#define SIZE_MATRIX 56
 int bwidth=SIZE_MATRIX,bheight=SIZE_MATRIX,bdepth=SIZE_MATRIX;
 int swap=0;
+int frame_step=0;
 
 
 #define TIME1 tick=GetTickCount();
@@ -217,7 +218,6 @@ int get3d_dst(int *dx,int *dy,int *dz,int shift,int size)
 	cx=size/2;
 	cy=size/2;
 	cz=size/2;
-	return;
 	if(*dx<cx)
 		(*dx)--;
 	else
@@ -230,6 +230,11 @@ int get3d_dst(int *dx,int *dy,int *dz,int shift,int size)
 		(*dz)--;
 	else
 		(*dz)++;
+	shift=(rand()%8)-4;
+	printf("shift=%i\n",shift);
+	(*dx)+=shift;
+	(*dy)+=shift;
+	(*dz)+=shift;
 }
 int do_3d_tornado(BYTE *src,BYTE *dst,int size)
 {
@@ -244,10 +249,10 @@ int do_3d_tornado(BYTE *src,BYTE *dst,int size)
 				w=h=d=bsize;
 				get3d_dst(&dx,&dy,&dz,shift,size);
 				blit_3d(src,dst,x,y,z,dx,dy,dz,w,h,d,size);
-				memset(src,0,size*size*size);
 			}
 		}
 	}
+	memset(src,0,size*size*size);
 
 }
 int print_text(char *str,char *buf,int x,int y)
@@ -627,7 +632,7 @@ int do_triangle()
 
 	glPopMatrix();
 
-	theta += 1.0f;
+//	theta += 1.0f;
 	Sleep (1);
 }
 int display_view1(HWND hwnd,HGLRC hglrc)
@@ -646,10 +651,14 @@ int display_view1(HWND hwnd,HGLRC hglrc)
 		do_triangle();
 		SwapBuffers(hdc);
 		slow++;
-		if(slow>0){
+		//if(slow>4)
+		{
 			slow=0;
-			do_3d_tornado(buffer,swap?bufA:bufB,SIZE_MATRIX);
-			swap=!swap;
+			if(frame_step){
+				do_3d_tornado(buffer,swap?bufA:bufB,SIZE_MATRIX);
+				swap=!swap;
+				frame_step=0;
+			}
 		}
 	}
 }
@@ -663,6 +672,7 @@ int resize_view(HWND hwnd,HWND hview)
 int rand_fill(unsigned char *buf,unsigned int size)
 {
 	int i;
+	srand(GetTickCount());
 	memset(buf,0,size);
 	for(i=0;i<size;i++){
 		if(rand()&1)
@@ -693,6 +703,7 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 		if(bufA==0 || bufB==0)
 			MessageBox(hwnd,"malloc failed","error",MB_OK);
 		else{
+			memset(bufB,0,bwidth*bheight*bdepth);
 			rand_fill(bufA,bwidth*bheight*bdepth);
 		}
 		create_grippy(hwnd);
@@ -846,7 +857,8 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 		case '0':
 		case '1':
 			//tube();
-			//break;
+			frame_step=1;
+			break;
 		case '2':
 		case '3':
 		case '4':

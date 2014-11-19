@@ -97,7 +97,7 @@ int blit(char *src,char *dst,int sx,int sy,int dx,int dy,
 		int show_src=FALSE;
 		int show_dst=FALSE;
 		show_src=TRUE;
-		show_dst=TRUE;
+		//show_dst=TRUE;
 		for(x=0;x<w;x++){
 			if(show_src){
 				set_pix(screen_out,sx+x,sy,0xFF0000);
