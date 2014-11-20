@@ -25,25 +25,16 @@ BYTE valueshift[]={
 };
 int compute_shift()
 {
-	static int i=0,count=0;
+	static int i=0;
 	shift2=shift1;
-	count++;
-	if(FALSE)
-	{
-	shift2=shift1=0;
-	return;
-	}
 	if(shift_rand){
-		static sign=-1;
-		shift1=8*sign;
-		sign=-sign;
-		//shift1=rand()%BSIZE;
+		shift1=rand()%BSIZE;
 	}
 	else
 		shift1=valueshift[i];
 	i++;
 	i&=31;
-	return 0;
+	return shift2-shift1;
 }
 
 
@@ -434,10 +425,9 @@ int tornado(char *buf,int init)
 		init_t(0,0,src);
 	}
 
-	compute_shift();
-	k=shift2-shift1;
+	k=compute_shift();
 	//shift1=shift2=0;
-	k=rand()%33;
+//	k=rand()%33;
 	for(y=0;y<HEIGHT;y+=BSIZE){
 		i=0;
 		for(x=0;x<WIDTH;x+=BSIZE){
@@ -450,7 +440,6 @@ int tornado(char *buf,int init)
 		}
 	}
 	printf("%i ",k);
-	//k=shift1;
 	k=0;
 	copy_to_main(dst,buf,k,k);
 //	blit(dst,buf,k,k,0,0,640,480);

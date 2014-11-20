@@ -239,6 +239,7 @@ int do_3d_tornado(BYTE *src,BYTE *dst,int size)
 	int x,y,z;
 	int bsize=size/2;
 	jitter=(rand()%17)-8;
+	//jitter=0;
 	printf("jitter=%i\n",jitter);
 	for(x=0;x<size;x+=bsize){
 		for(y=0;y<size;y+=bsize){
@@ -247,7 +248,7 @@ int do_3d_tornado(BYTE *src,BYTE *dst,int size)
 				int w,h,d;
 				w=h=d=bsize;
 				get3d_dst(&dx,&dy,&dz,jitter,size);
-				blit_3d(src,dst,x,y,z,dx,dy,dz,w,h,d,size);
+				blit_3d(src,dst,x+jitter,y+jitter,z+jitter,dx,dy,dz,w,h,d,size);
 			}
 		}
 	}
@@ -589,8 +590,9 @@ int do_matrix()
 		for(j=0;j<bheight;j++){
 			for(k=0;k<bdepth;k++){
 				if(buffer[i+j*bwidth+(k*bwidth*bheight)]){
+					int move=0;
 					glPushMatrix();
-					glTranslatef(cx+i,cy+j,cz+k);
+					glTranslatef(cx+i+move,cy+j+move,cz+k+move);
 					render_cube();
 					glPopMatrix();
 				}
