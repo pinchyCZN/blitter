@@ -336,8 +336,24 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam)
 		case 'L':
 			set_offsety(-1);
 			break;
+		case 'V':
+			if(LMB)
+				handle_click(xpos,ypos);
+			tornado(buffer,FALSE);
+			InvalidateRect(hwnd,NULL,TRUE);
+			break;
+		case 'C':
+			{
+				extern int show_grid;
+				show_grid=!show_grid;
+			}
+			break;
 		case 'X':
-			create_seed();
+			//create_seed();
+			{
+				extern int stabalize;
+				stabalize=!stabalize;
+			}
 			break;
 		case 'Z':
 			//init_t(640/2+xpos,480/2-ypos,get_buffer());
@@ -487,6 +503,7 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam)
 			else
 				;
 			break;
+			/*
 		case 'V':
 			if(GetKeyState(VK_CONTROL)&0x8000){
 				if(OpenClipboard(NULL)){
@@ -499,6 +516,7 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wParam,LPARAM lParam)
 				}
 			}
 			break;
+			*/
 		case VK_ESCAPE:
 			if(MessageBox(hwnd,"Sure you want to quit?","QUIT",MB_OKCANCEL)==IDOK)
 				PostQuitMessage(0);

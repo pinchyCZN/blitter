@@ -212,27 +212,31 @@ int blit_3d(char *src,char *dst,int x,int y,int z,int dx,int dy,int dz,int w,int
 		}
 	}
 }
-int get3d_dst(int *dx,int *dy,int *dz,int shift,int size)
+int get3d_dst(int *x,int *y,int *z,int shift,int size)
 {
 	int cx,cy,cz;
+	int nx=*x,ny=*y,nz=*z;
 	cx=size/2;
 	cy=size/2;
 	cz=size/2;
-	if(*dx<cx)
-		(*dx)--;
-	else
-		(*dx)++;
-	if(*dy<cy)
-		(*dy)--;
-	else
-		(*dy)++;
-	if(*dz<cz)
-		(*dz)--;
-	else
-		(*dz)++;
-	(*dx)+=shift;
-	(*dy)+=shift;
-	(*dz)+=shift;
+	if(*x>=cx && *y<cy)
+		nx--;
+	if(*x<cx && *y>=cy)
+		nx++;
+	if(*y<cy && *x<cx)
+		ny++;
+	if(*y>=cy && *x>=cx)
+		ny--;
+	//if(*z<cz)
+	//	(*z)--;
+	//else
+	//	(*z)++;
+	*x=nx;
+	*y=ny;
+	*z=nz;
+	(*x)+=shift;
+	(*y)+=shift;
+	(*z)+=shift;
 }
 int do_3d_tornado(BYTE *src,BYTE *dst,int size)
 {
@@ -247,8 +251,8 @@ int do_3d_tornado(BYTE *src,BYTE *dst,int size)
 				int dx=x,dy=y,dz=z;
 				int w,h,d;
 				w=h=d=bsize;
-				get3d_dst(&dx,&dy,&dz,jitter,size);
-				blit_3d(src,dst,x+jitter,y+jitter,z+jitter,dx,dy,dz,w,h,d,size);
+				get3d_dst(&x,&y,&z,0,size);
+				blit_3d(src,dst,x+jitter,y+jitter,z+jitter,dx+jitter,dy+jitter,dz+jitter,w,h,d,size);
 			}
 		}
 	}

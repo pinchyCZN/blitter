@@ -18,6 +18,9 @@ int switch_shift(){
 	shift_rand=!shift_rand;
 	return shift_rand;
 }
+int stabalize=0;
+int show_grid=1;
+
 BYTE valueshift[]={
 	0,16,8,24,4,20,12,28,2,18,10,26,
 	6,22,14,30,1,17,9,25,5,21,13,29,
@@ -83,30 +86,30 @@ int blit(char *src,char *dst,int sx,int sy,int dx,int dy,
 			move_pixel(src,dst,sx+x,sy+y,dx+x,dy+y);
 		}
 	}
-	//if(FALSE)
+	if(show_grid)
 	{
 		int show_src=FALSE;
 		int show_dst=FALSE;
 		show_src=TRUE;
 		show_dst=TRUE;
-		for(x=0;x<w;x++){
-			if(show_src){
-				set_pix(screen_out,sx+x,sy,0xFF0000);
-				set_pix(screen_out,sx+x,sy+h,0xFF0000);
-			}
-			if(show_dst){
+		if(show_dst){
+			for(x=0;x<w;x++){
 				set_pix(screen_out,dx+x,dy,0x7F70);
 				set_pix(screen_out,dx+x,dy+h,0x7F70);
 			}
-		}
-		for(y=0;y<h;y++){
-			if(show_src){
-				set_pix(screen_out,sx,sy+y,0xFF0000);
-				set_pix(screen_out,sx+w,sy+y,0xFF0000);
-			}
-			if(show_dst){
+			for(y=0;y<h;y++){
 				set_pix(screen_out,dx,dy+y,0x7F70);
 				set_pix(screen_out,dx+w,dy+y,0x7F70);
+			}
+		}
+		if(show_src){
+			for(x=0;x<w;x++){
+				set_pix(screen_out,sx+x,sy,0xFF0000);
+				set_pix(screen_out,sx+x,sy+h,0xFF0000);
+			}
+			for(y=0;y<h;y++){
+				set_pix(screen_out,sx,sy+y,0xFF0000);
+				set_pix(screen_out,sx+w,sy+y,0xFF0000);
 			}
 		}
 		return 0;
@@ -440,7 +443,8 @@ int tornado(char *buf,int init)
 		}
 	}
 	printf("%i ",k);
-	k=0;
+	if(!stabalize)
+		k=0;
 	copy_to_main(dst,buf,k,k);
 //	blit(dst,buf,k,k,0,0,640,480);
 	//blit(dst,buf,0,0,0,0,WIDTH,HEIGHT);
