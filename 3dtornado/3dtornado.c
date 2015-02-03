@@ -28,7 +28,7 @@ int BUF_SIZE=BUF_WIDTH*BUF_HEIGHT*3;
 int stretch=0;
 BYTE *buffer=0;
 BYTE *bufA,*bufB;
-#define SIZE_MATRIX 56
+#define SIZE_MATRIX 200
 int bwidth=SIZE_MATRIX,bheight=SIZE_MATRIX,bdepth=SIZE_MATRIX;
 int swap=0;
 int frame_step=0;
@@ -193,70 +193,87 @@ int set_3dpixel(BYTE *buf,float *x,float *y,float *z,BYTE R,BYTE G,BYTE B)
 int move_point(BYTE src,BYTE dst,int x1,int y1,int z1,int x2,int y2,int z2)
 {
 }
-int blit_3d(char *src,char *dst,int x,int y,int z,int dx,int dy,int dz,int w,int h,int d,int size)
+int blit_3d(char *src,char *dst,int x,int y,int z,int dx,int dy,int dz,int w,int h,int d,int sizex,int sizey,int sizez)
 {
 	int i,j,k;
 	for(i=0;i<w;i++){
 		for(j=0;j<h;j++){
 			for(k=0;k<d;k++){
 				int t=0;
-				if((x+i)>=0 && (x+i)<size && (y+j)>=0 && (y+j)<size && (z+k)>=0 && (z+k)<size)
-					t=src[x+i+(y+j)*size+(z+k)*size*size];
+				if((x+i)>=0 && (x+i)<sizex && (y+j)>=0 && (y+j)<sizey && (z+k)>=0 && (z+k)<sizez)
+					t=src[x+i+(y+j)*sizex+(z+k)*sizex*sizey];
 				else
 					t=t;
-				if((dx+i)>=0 && (dx+i)<size && (dy+j)>=0 && (dy+j)<size && (dz+k)>=0 && (dz+k)<size)
-					dst[dx+i+(dy+j)*size+(dz+k)*size*size]=t;
+				if((dx+i)>=0 && (dx+i)<sizex && (dy+j)>=0 && (dy+j)<sizey && (dz+k)>=0 && (dz+k)<sizez)
+					dst[dx+i+(dy+j)*sizex+(dz+k)*sizex*sizey]=t;
 				else
 					t=t;
 			}
 		}
 	}
 }
-int get3d_dst(int *x,int *y,int *z,int shift,int size)
+static int rotate_3d(float *_x,float *_y,float *_z,float rx,float ry,float rz)
 {
-	int cx,cy,cz;
-	int nx=*x,ny=*y,nz=*z;
-	cx=size/2;
-	cy=size/2;
-	cz=size/2;
-	if(*x>=cx && *y<cy)
-		nx--;
-	if(*x<cx && *y>=cy)
-		nx++;
-	if(*y<cy && *x<cx)
-		ny++;
-	if(*y>=cy && *x>=cx)
-		ny--;
-	//if(*z<cz)
-	//	(*z)--;
-	//else
-	//	(*z)++;
-	*x=nx;
-	*y=ny;
-	*z=nz;
-	(*x)+=shift;
-	(*y)+=shift;
-	(*z)+=shift;
+	float cx,cy,cz,sx,sy,sz;
+	float tx,ty,tz;
+	float x,y,z;
+	x=*_x;y=*_y;z=*_z;
+	cx=cos(rx);
+	cy=cos(ry);
+	cz=cos(rz);
+	sx=sin(rx);
+	sy=sin(ry);
+	sz=sin(rz);
+	tx=x*cy*cz+y*cy*sz-z*sy;
+	ty=x*(sx*sy*cz-cx*sz)+y*(sx*sy*sz+cx*cz)+z*sx*cy;
+	tz=x*(cx*sy*cz+sx*sz)+y*(cx*sy*sz-sx*cz)+z*cx*cy;
+	*_x=tx;
+	*_y=ty;
+	*_z=tz;
+	return TRUE;
 }
-int do_3d_tornado(BYTE *src,BYTE *dst,int size)
+int get3d_dst(int *x,int *y,int *z,int shift,int sizex,int sizey,int sizez)
+{
+	float cx,cy,cz;
+	float nx=*x,ny=*y,nz=*z;
+	float a,b,c,r;
+	cx=sizex/2;
+	cy=sizey/2;
+	cz=sizez/2;
+	r=3.14/64.;
+	a=nx-cx;
+	b=ny-cy;
+	c=nz-cz;
+	rotate_3d(&a,&b,&c,r,r,r);
+    a=a+cx;
+    b=b+cy;
+	c=c+cz;
+	*x=a;
+	*y=b;
+	*z=c;
+	
+}
+int do_3d_tornado(BYTE *src,BYTE *dst,int sizex,int sizey,int sizez)
 {
 	int x,y,z;
-	int bsize=size/2;
-	jitter=(rand()%17)-8;
+	int bsizex=sizex/5;
+	int bsizey=sizey/5;
+	int bsizez=sizez/5;
+	jitter=(rand()%bsizex)-(bsizex/2);
 	//jitter=0;
 	printf("jitter=%i\n",jitter);
-	for(x=0;x<size;x+=bsize){
-		for(y=0;y<size;y+=bsize){
-			for(z=0;z<size;z+=bsize){
+	for(x=0;x<sizex;x+=bsizex){
+		for(y=0;y<sizey;y+=bsizey){
+			for(z=0;z<sizez;z+=bsizez){
 				int dx=x,dy=y,dz=z;
-				int w,h,d;
-				w=h=d=bsize;
-				get3d_dst(&x,&y,&z,0,size);
-				blit_3d(src,dst,x+jitter,y+jitter,z+jitter,dx+jitter,dy+jitter,dz+jitter,w,h,d,size);
+				int zjit=jitter;
+				get3d_dst(&dx,&dy,&dz,0,sizex,sizey,sizez);
+				blit_3d(src,dst,x+jitter,y+jitter,z+zjit,dx+jitter,dy+jitter,dz+zjit,
+					bsizex,bsizey,bsizez,sizex,sizey,sizez);
 			}
 		}
 	}
-	memset(src,0,size*size*size);
+	memset(src,0,sizex*sizey*sizez);
 
 }
 int print_text(char *str,char *buf,int x,int y)
@@ -660,7 +677,7 @@ int display_view1(HWND hwnd,HGLRC hglrc)
 		{
 			slow=0;
 			if(frame_step){
-				do_3d_tornado(buffer,swap?bufA:bufB,SIZE_MATRIX);
+				do_3d_tornado(buffer,swap?bufA:bufB,bwidth,bheight,bdepth);
 				swap=!swap;
 				frame_step=0;
 			}
@@ -674,14 +691,17 @@ int resize_view(HWND hwnd,HWND hview)
 	reshape(rect.right,rect.bottom);
 	return MoveWindow(hview,0,0,rect.right,rect.bottom,FALSE);
 }
-int rand_fill(unsigned char *buf,unsigned int size)
+int rand_fill(unsigned char *buf,unsigned int x,unsigned int y,unsigned int z)
 {
-	int i;
+	int i,j;
+	int size=x*y*z;
 	srand(GetTickCount());
 	memset(buf,0,size);
-	for(i=0;i<size;i++){
-		if(rand()&1)
-			buf[i]=1;
+	for(i=x/10;i<(x-x/10);i++){
+		for(j=y/10;j<(y-y/10);j++){
+			if(rand()&1)
+				buf[i+j*x+(z/2)*x*y]=1;
+		}
 	}
 }
 LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
@@ -709,7 +729,7 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 			MessageBox(hwnd,"malloc failed","error",MB_OK);
 		else{
 			memset(bufB,0,bwidth*bheight*bdepth);
-			rand_fill(bufA,bwidth*bheight*bdepth);
+			rand_fill(bufA,bwidth,bheight,bdepth);
 		}
 		create_grippy(hwnd);
 		BringWindowToTop(hwnd);
@@ -833,7 +853,7 @@ LRESULT CALLBACK MainDlg(HWND hwnd,UINT message,WPARAM wparam,LPARAM lparam)
 		case 'W':
 			break;
 		case 0xC0:
-			rand_fill(swap?bufB:bufA,bwidth*bheight*bdepth);
+			rand_fill(swap?bufB:bufA,bwidth,bheight,bdepth);
 			break;
 		case 'K':
 			set_offsety(1);

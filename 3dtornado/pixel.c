@@ -436,7 +436,7 @@ tx=(*x)*cz+(*y)*sz;
 ty=(*x)*(-sz)+(*y)*(cz);
 tz=(*z);
 */
-int rotate_3d(float *x,float *y,float *z,float *rx,float *ry,float *rz)
+static int rotate_3d(float *x,float *y,float *z,float *rx,float *ry,float *rz)
 {
 	float cx,cy,cz,sx,sy,sz;
 	float tx,ty,tz;
